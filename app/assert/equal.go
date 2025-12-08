@@ -23,27 +23,38 @@
 // =                OTHER DEALINGS IN THE SOFTWARE.
 // =====================================================================================================================
 
-// Package assert provides a fluent, comprehensive set of assertion functions for Go's standard testing framework.
-//
-// It simplifies writing test cases by providing rich, readable assertion methods that accept a [testing.TB] instance
-// as the first argument. When an assertion fails, it calls [testing.TB.Fatalf] internally.
-//
-// Basic usage example:
-//
-//	func TestMyFunction(t *testing.T) {
-//	    result := MyFunction()
-//
-//	    assert.Truef(t, result > 0, "Expected result (%d) to be positive", result)
-//	}
-//
-// Key assertion categories:
-//
-//   - Equality: [Equalf], [EqualSf], [Nilf] and [NotNilf].
-//   - Boolean: [Truef] and [Falsef].
-//   - Comparison: [Emptyf], [GreaterThanf] and [LessThanf].
-//   - Error handling: [Errorf], [Panicf] and [NoPanicf].
-//
-// Each function includes the ability to format a custom failure message, similar to [fmt.SPrintf].
 package assert
 
-import _ "fmt"
+import (
+	_ "fmt"
+	"slices"
+	"testing"
+)
+
+// Equalf asserts that got and want are equal.
+//
+// Equalf is generic over any [comparable] type V and compares values using the == operator.
+// If got and want are not equal, Equalf calls [testing.TB.Fatalf] with a message formatted according to format and args,
+// in the same style as [fmt.Sprintf].
+//
+// For slice equality, use [EqualSf].
+func Equalf[V comparable](tb testing.TB, got, want V, format string, args ...any) {
+	tb.Helper()
+
+	if got != want {
+		tb.Fatalf(format, args...)
+	}
+}
+
+// EqualSf asserts that the slices got and want are equal.
+//
+// EqualSf is generic over any slice type S whose element type V is [comparable]. It compares slices using
+// [slices.Equal]. If got and want are not equal, EqualSf calls [testing.TB.Fatalf] with a message formatted according
+// to format and args, in the same style as [fmt.Sprintf].
+func EqualSf[S ~[]V, V comparable](tb testing.TB, got, want S, format string, args ...any) {
+	tb.Helper()
+
+	if !slices.Equal(got, want) {
+		tb.Fatalf(format, args...)
+	}
+}

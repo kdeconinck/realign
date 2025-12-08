@@ -23,27 +23,44 @@
 // =                OTHER DEALINGS IN THE SOFTWARE.
 // =====================================================================================================================
 
-// Package assert provides a fluent, comprehensive set of assertion functions for Go's standard testing framework.
-//
-// It simplifies writing test cases by providing rich, readable assertion methods that accept a [testing.TB] instance
-// as the first argument. When an assertion fails, it calls [testing.TB.Fatalf] internally.
-//
-// Basic usage example:
-//
-//	func TestMyFunction(t *testing.T) {
-//	    result := MyFunction()
-//
-//	    assert.Truef(t, result > 0, "Expected result (%d) to be positive", result)
-//	}
-//
-// Key assertion categories:
-//
-//   - Equality: [Equalf], [EqualSf], [Nilf] and [NotNilf].
-//   - Boolean: [Truef] and [Falsef].
-//   - Comparison: [Emptyf], [GreaterThanf] and [LessThanf].
-//   - Error handling: [Errorf], [Panicf] and [NoPanicf].
-//
-// Each function includes the ability to format a custom failure message, similar to [fmt.SPrintf].
-package assert
+package assert_test
 
-import _ "fmt"
+import (
+	"fmt"
+	"testing"
+)
+
+// TbSpy wraps a [testing.TB] and records the last failure message passed to [TbSpy.Fatalf] instead of failing the test
+// immediately.
+//
+// It is intended for use in tests of the assert package itself, to verify that assertion helpers call Fatalf with the
+// expected message.
+type TbSpy struct {
+	testing.TB
+	failureMsg string
+}
+
+// SpyTb returns a new [TbSpy] that wraps the provided [testing.TB].
+//
+// The returned spy forwards all methods to tb except for Fatalf, which is overridden to capture the formatted failure
+// message instead of marking the test as failed.
+func SpyTb(tb testing.TB) *TbSpy {
+	return &TbSpy{
+		TB: tb,
+	}
+}
+
+// Fatalf records the formatted failure message in failureMsg.
+//
+// Fatalf does not call the embedded [testing.TB.Fatalf], so using TbSpy does not fail the underlying test. This allows
+// tests to inspect the message that would have been reported by assertion helpers.
+func (tb *TbSpy) Fatalf(format string, args ...any) {
+	tb.failureMsg = fmt.Sprintf(format, args...)
+}
+
+func newSlice[T any](args ...T) []T {
+	container := make([]T, len(args))
+	copy(container, args)
+
+	return container
+}

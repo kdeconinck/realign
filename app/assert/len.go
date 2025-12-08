@@ -23,27 +23,48 @@
 // =                OTHER DEALINGS IN THE SOFTWARE.
 // =====================================================================================================================
 
-// Package assert provides a fluent, comprehensive set of assertion functions for Go's standard testing framework.
-//
-// It simplifies writing test cases by providing rich, readable assertion methods that accept a [testing.TB] instance
-// as the first argument. When an assertion fails, it calls [testing.TB.Fatalf] internally.
-//
-// Basic usage example:
-//
-//	func TestMyFunction(t *testing.T) {
-//	    result := MyFunction()
-//
-//	    assert.Truef(t, result > 0, "Expected result (%d) to be positive", result)
-//	}
-//
-// Key assertion categories:
-//
-//   - Equality: [Equalf], [EqualSf], [Nilf] and [NotNilf].
-//   - Boolean: [Truef] and [Falsef].
-//   - Comparison: [Emptyf], [GreaterThanf] and [LessThanf].
-//   - Error handling: [Errorf], [Panicf] and [NoPanicf].
-//
-// Each function includes the ability to format a custom failure message, similar to [fmt.SPrintf].
 package assert
 
-import _ "fmt"
+import (
+	_ "fmt"
+	"testing"
+)
+
+// Emptyf asserts that the slice got is empty.
+//
+// Emptyf is generic over any slice type S. The assertion succeeds if got contains no elements. If got contains any
+// elements, Emptyf calls [testing.TB.Fatalf] with a message formatted according to format and args, in the same style
+// as [fmt.Sprintf].
+func Emptyf[S ~[]V, V any](tb testing.TB, got S, format string, args ...any) {
+	tb.Helper()
+
+	if len(got) > 0 {
+		tb.Fatalf(format, args...)
+	}
+}
+
+// GreaterThanf asserts that the length of the slice got is greater than want.
+//
+// GreaterThanf is generic over any slice type S. The assertion succeeds if got contains more elements than want.
+// If got doesn't contain more elements than want, GreaterThanf calls [testing.TB.Fatalf] with a message formatted
+// according to format and args, in the same style as [fmt.Sprintf].
+func GreaterThanf[S ~[]V, V any](tb testing.TB, got S, want int, format string, args ...any) {
+	tb.Helper()
+
+	if len(got) <= want {
+		tb.Fatalf(format, args...)
+	}
+}
+
+// LessThanf asserts that the length of the slice got is less than want.
+//
+// LessThanf is generic over any slice type S. The assertion succeeds if got contains fewer elements than want.
+// If got doesn't contain fewer elements than want, LessThanf calls [testing.TB.Fatalf] with a message formatted
+// according to format and args, in the same style as [fmt.Sprintf].
+func LessThanf[S ~[]V, V any](tb testing.TB, got S, want int, format string, args ...any) {
+	tb.Helper()
+
+	if len(got) >= want {
+		tb.Fatalf(format, args...)
+	}
+}

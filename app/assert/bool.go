@@ -23,27 +23,33 @@
 // =                OTHER DEALINGS IN THE SOFTWARE.
 // =====================================================================================================================
 
-// Package assert provides a fluent, comprehensive set of assertion functions for Go's standard testing framework.
-//
-// It simplifies writing test cases by providing rich, readable assertion methods that accept a [testing.TB] instance
-// as the first argument. When an assertion fails, it calls [testing.TB.Fatalf] internally.
-//
-// Basic usage example:
-//
-//	func TestMyFunction(t *testing.T) {
-//	    result := MyFunction()
-//
-//	    assert.Truef(t, result > 0, "Expected result (%d) to be positive", result)
-//	}
-//
-// Key assertion categories:
-//
-//   - Equality: [Equalf], [EqualSf], [Nilf] and [NotNilf].
-//   - Boolean: [Truef] and [Falsef].
-//   - Comparison: [Emptyf], [GreaterThanf] and [LessThanf].
-//   - Error handling: [Errorf], [Panicf] and [NoPanicf].
-//
-// Each function includes the ability to format a custom failure message, similar to [fmt.SPrintf].
 package assert
 
-import _ "fmt"
+import (
+	_ "fmt"
+	"testing"
+)
+
+// Truef asserts that got is true.
+//
+// If got is false, Truef calls [testing.TB.Fatalf] with a message formatted according to format and args, in the same
+// style as [fmt.Sprintf].
+func Truef(tb testing.TB, got bool, format string, args ...any) {
+	tb.Helper()
+
+	if !got {
+		tb.Fatalf(format, args...)
+	}
+}
+
+// Falsef asserts that got is false.
+//
+// If got is true, Falsef calls [testing.TB.Fatalf] with a message formatted according to format and args, in the same
+// style as [fmt.Sprintf].
+func Falsef(tb testing.TB, got bool, format string, args ...any) {
+	tb.Helper()
+
+	if got {
+		tb.Fatalf(format, args...)
+	}
+}

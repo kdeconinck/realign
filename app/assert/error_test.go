@@ -23,27 +23,65 @@
 // =                OTHER DEALINGS IN THE SOFTWARE.
 // =====================================================================================================================
 
-// Package assert provides a fluent, comprehensive set of assertion functions for Go's standard testing framework.
-//
-// It simplifies writing test cases by providing rich, readable assertion methods that accept a [testing.TB] instance
-// as the first argument. When an assertion fails, it calls [testing.TB.Fatalf] internally.
-//
-// Basic usage example:
-//
-//	func TestMyFunction(t *testing.T) {
-//	    result := MyFunction()
-//
-//	    assert.Truef(t, result > 0, "Expected result (%d) to be positive", result)
-//	}
-//
-// Key assertion categories:
-//
-//   - Equality: [Equalf], [EqualSf], [Nilf] and [NotNilf].
-//   - Boolean: [Truef] and [Falsef].
-//   - Comparison: [Emptyf], [GreaterThanf] and [LessThanf].
-//   - Error handling: [Errorf], [Panicf] and [NoPanicf].
-//
-// Each function includes the ability to format a custom failure message, similar to [fmt.SPrintf].
-package assert
+package assert_test
 
-import _ "fmt"
+import (
+	"io"
+	"testing"
+
+	"github.com/kdeconinck/realign/assert"
+)
+
+// UT: Compare 2 errors for equality.
+func Test_Errorf(t *testing.T) {
+	t.Parallel() // Enable parallel execution.
+
+	const msgFmt string = "Not equal - got %v, want %v."
+
+	for tcName, tc := range map[string]struct {
+		gotInput  error
+		wantInput error
+		want      string
+	}{
+		"When 'got' and 'want' are equal, the assertion should NOT fail.": {
+			gotInput:  io.EOF,
+			wantInput: io.EOF,
+		},
+		"When 'got' and 'want' are <nil>, the assertion should NOT fail.": {
+			gotInput:  nil,
+			wantInput: nil,
+		},
+		"When 'got' is <nil> and 'want' is NOT <nil>, the assertion should fail.": {
+			gotInput:  nil,
+			wantInput: io.EOF,
+			want:      "Not equal - got <nil>, want EOF.",
+		},
+		"When 'got' is NOT <nil> and 'want' is <nil>, the assertion should fail.": {
+			gotInput:  io.EOF,
+			wantInput: nil,
+			want:      "Not equal - got EOF, want <nil>.",
+		},
+		"When 'got' and want are NOT equal, the assertion should fail.": {
+			gotInput:  io.ErrUnexpectedEOF,
+			wantInput: io.EOF,
+			want:      "Not equal - got unexpected EOF, want EOF.",
+		},
+	} {
+		tcName, tc := tcName, tc // Rebind: Needed for parallel support.
+
+		t.Run(tcName, func(t *testing.T) {
+			t.Parallel() // Enable parallel execution.
+
+			// Arrange.
+			tbSpy := SpyTb(t)
+
+			// Act.
+			assert.Errorf(tbSpy, tc.gotInput, tc.wantInput, msgFmt, tc.gotInput, tc.wantInput)
+
+			// Assert.
+			if tbSpy.failureMsg != tc.want {
+				t.Fatalf("Failure message = \"%s\", want \"%s\"", tbSpy.failureMsg, tc.want)
+			}
+		})
+	}
+}

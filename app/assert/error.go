@@ -23,27 +23,35 @@
 // =                OTHER DEALINGS IN THE SOFTWARE.
 // =====================================================================================================================
 
-// Package assert provides a fluent, comprehensive set of assertion functions for Go's standard testing framework.
-//
-// It simplifies writing test cases by providing rich, readable assertion methods that accept a [testing.TB] instance
-// as the first argument. When an assertion fails, it calls [testing.TB.Fatalf] internally.
-//
-// Basic usage example:
-//
-//	func TestMyFunction(t *testing.T) {
-//	    result := MyFunction()
-//
-//	    assert.Truef(t, result > 0, "Expected result (%d) to be positive", result)
-//	}
-//
-// Key assertion categories:
-//
-//   - Equality: [Equalf], [EqualSf], [Nilf] and [NotNilf].
-//   - Boolean: [Truef] and [Falsef].
-//   - Comparison: [Emptyf], [GreaterThanf] and [LessThanf].
-//   - Error handling: [Errorf], [Panicf] and [NoPanicf].
-//
-// Each function includes the ability to format a custom failure message, similar to [fmt.SPrintf].
 package assert
 
-import _ "fmt"
+import (
+	"errors"
+	_ "fmt"
+	"testing"
+)
+
+// Errorf asserts that the error got matches the expected error want.
+//
+// The assertion succeeds if both got and want are nil, or if [errors.Is] reports that got matches want. If exactly one
+// of got or want is nil, or if [errors.Is] reports no match, Errorf calls [testing.TB.Fatalf] with a message formatted
+// according to format and args, in the same style as [fmt.Sprintf].
+func Errorf(tb testing.TB, got, want error, format string, args ...any) {
+	tb.Helper()
+
+	switch {
+	case got == nil && want == nil:
+		return
+
+	case got == nil:
+		tb.Fatalf(format, args...)
+
+	case want == nil:
+		tb.Fatalf(format, args...)
+
+	default:
+		if !errors.Is(got, want) {
+			tb.Fatalf(format, args...)
+		}
+	}
+}
